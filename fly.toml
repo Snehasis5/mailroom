@@ -1,0 +1,31 @@
+# fly.toml — adjust `app` name, then:
+#   fly launch --no-deploy   (accept this fly.toml when prompted)
+#   fly volumes create mailroom_data --region <region> --size 1
+#   fly secrets set DEEPSEEK_API_KEY=sk-...
+#   fly deploy
+
+app = "mailroom-agent"           # change to a unique name
+primary_region = "iad"           # pick your region
+
+[build]
+
+[env]
+  MAILROOM_DB_PATH = "/data/mailroom.db"
+  DEEPSEEK_MODEL = "deepseek-chat"
+
+[[mounts]]
+  source = "mailroom_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false     # keep the model/DB warm; avoid cold-start timeouts
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  method = "GET"
+  path = "/healthz"
